@@ -66,12 +66,26 @@ namespace maqueen {
         CCW = 0x1
     }
 
-    export enum Patrol {
-        //% blockId="patrolLeft" block="left"
-        PatrolLeft = 13,
-        //% blockId="patrolRight" block="right"
-        PatrolRight = 14
-    }
+    //Line sensor selection
+    export enum MyEnumLineSensor {
+        //% block="L2"
+        SensorL2,
+        //% block="L1"
+        SensorL1,
+        //% block="M"
+        SensorM,
+        //% block="R1"
+        SensorR1,
+        //% block="R2"
+        SensorR2,
+    };
+    
+    const I2CADDR = 0x10;
+    const ADC0_REGISTER = 0X1E;
+    const ADC1_REGISTER = 0X20;
+    const ADC2_REGISTER = 0X22;
+    const ADC3_REGISTER = 0X24;
+    const ADC4_REGISTER = 0X26;
 
     export enum Patrol1 {
         //% blockId="patrolLeft" block="left"
@@ -255,14 +269,37 @@ namespace maqueen {
     //% weight=20
     //% blockId=read_Patrol block="read |%patrol line tracking sensor"
     //% patrol.fieldEditor="gridpicker" patrol.fieldOptions.columns=2 
-    export function readPatrol(patrol: Patrol): number {
-        if (patrol == Patrol.PatrolLeft) {
-            return pins.digitalReadPin(DigitalPin.P13)
-        } else if (patrol == Patrol.PatrolRight) {
-            return pins.digitalReadPin(DigitalPin.P14)
-        } else {
-            return -1
+    export function readLineSensorData(eline:MyEnumLineSensor):number{
+        let data;
+        switch(eline){
+            case MyEnumLineSensor.SensorR2:
+                pins.i2cWriteNumber(I2CADDR, ADC0_REGISTER, NumberFormat.Int8LE);
+                let adc0Buffer = pins.i2cReadBuffer(I2CADDR, 2);
+                data = adc0Buffer[1] << 8 | adc0Buffer[0]
+            break;
+            case MyEnumLineSensor.SensorR1:
+                pins.i2cWriteNumber(I2CADDR, ADC1_REGISTER, NumberFormat.Int8LE);
+                let adc1Buffer = pins.i2cReadBuffer(I2CADDR, 2);
+                data = adc1Buffer[1] << 8 | adc1Buffer[0];
+            break;
+            case MyEnumLineSensor.SensorM:
+                pins.i2cWriteNumber(I2CADDR, ADC2_REGISTER, NumberFormat.Int8LE);
+                let adc2Buffer = pins.i2cReadBuffer(I2CADDR, 2);
+                data = adc2Buffer[1] << 8 | adc2Buffer[0];
+            break;
+            case MyEnumLineSensor.SensorL1:
+                pins.i2cWriteNumber(I2CADDR, ADC3_REGISTER, NumberFormat.Int8LE);
+                let adc3Buffer = pins.i2cReadBuffer(I2CADDR, 2);
+                data = adc3Buffer[1] << 8 | adc3Buffer[0];
+            break;
+            default:
+                pins.i2cWriteNumber(I2CADDR, ADC4_REGISTER, NumberFormat.Int8LE);
+                let adc4Buffer = pins.i2cReadBuffer(I2CADDR, 2);
+                data = adc4Buffer[1] << 8 | adc4Buffer[0];
+            break;
+
         }
+        return data;
     }
 
     /**
