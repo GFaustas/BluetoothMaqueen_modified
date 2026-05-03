@@ -18,6 +18,10 @@ let maqueenparam = 0
 let alreadyInit = 0
 let IrPressEvent = 0
 const MOTER_ADDRESSS = 0x10
+const I2CADDR = 0x10;
+const LINE_STATE_REGISTER = 0X1D;
+const LEFT_LED_REGISTER = 0X0B;
+const RIGHT_LED_REGISTER = 0X0C;
 
 enum PingUnit {
     //% block="cm"
@@ -80,8 +84,6 @@ namespace maqueen {
         SensorR2,
     };
 
-    const I2CADDR = 0x10;
-    const LINE_STATE_REGISTER = 0X1D;
 
     export enum Patrol1 {
         //% blockId="patrolLeft" block="left"
@@ -96,12 +98,23 @@ namespace maqueen {
         Low = 0x00
     }
 
-    export enum LED {
-        //% blockId="LEDLeft" block="left"
-        LEDLeft = 8,
-        //% blockId="LEDRight" block="right"
-        LEDRight = 12
-    }
+    //LED light selection enumeration
+    export enum MyEnumLed {
+        //% block="left led light"
+        LeftLed,
+        //% block="right led light"
+        RightLed,
+        //% block="all led light"
+        AllLed,
+    };
+
+    //LED light switch enumeration selection
+    export enum MyEnumSwitch {
+        //% block="close"
+        Close,
+        //% block="open"
+        Open,
+    };
 
     export enum LEDswitch {
         //% blockId="turnOn" block="ON"
@@ -109,12 +122,6 @@ namespace maqueen {
         //% blockId="turnOff" block="OFF"
         turnOff = 0x00
     }
-
-
-
-
-
-
 
 
     /**
@@ -290,20 +297,34 @@ namespace maqueen {
     }
 
     /**
-     * Turn on/off the LEDs.
+     * Control left and right LED light switch module
+     * @param eled LED lamp selection
+     * @param eSwitch Control LED light on or off
      */
 
-    //% weight=20
-    //% blockId=writeLED block="LEDlight |%led turn |%ledswitch"
-    //% led.fieldEditor="gridpicker" led.fieldOptions.columns=2 
-    //% ledswitch.fieldEditor="gridpicker" ledswitch.fieldOptions.columns=2
-    export function writeLED(led: LED, ledswitch: LEDswitch): void {
-        if (led == LED.LEDLeft) {
-            pins.digitalWritePin(DigitalPin.P8, ledswitch)
-        } else if (led == LED.LEDRight) {
-            pins.digitalWritePin(DigitalPin.P12, ledswitch)
-        } else {
-            return
+    //% block="control %eled %eSwitch"
+    //% weight=97
+    export function controlLED(eled:MyEnumLed, eSwitch:MyEnumSwitch):void{
+        switch(eled){
+            case MyEnumLed.LeftLed:
+                let leftLedControlBuffer = pins.createBuffer(2);
+                leftLedControlBuffer[0] = LEFT_LED_REGISTER;
+                leftLedControlBuffer[1] = eSwitch;
+                pins.i2cWriteBuffer(I2CADDR, leftLedControlBuffer);
+            break;
+            case MyEnumLed.RightLed:
+                let rightLedControlBuffer = pins.createBuffer(2);
+                rightLedControlBuffer[0] = RIGHT_LED_REGISTER;
+                rightLedControlBuffer[1] = eSwitch;
+                pins.i2cWriteBuffer(I2CADDR, rightLedControlBuffer);
+            break;
+            default:
+                let allLedControlBuffer = pins.createBuffer(3);
+                allLedControlBuffer[0] = LEFT_LED_REGISTER;
+                allLedControlBuffer[1] = eSwitch;
+                allLedControlBuffer[2] = eSwitch;
+                pins.i2cWriteBuffer(I2CADDR, allLedControlBuffer);
+            break;
         }
     }
 
